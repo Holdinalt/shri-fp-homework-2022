@@ -15,37 +15,109 @@
  * Ответ будет приходить в поле {result}
  */
  import Api from '../tools/api';
+import {
+    allPass,
+    andThen,
+    compose,
+    ifElse,
+    length,
+    lensProp,
+    not, otherwise,
+    pipe,
+    prop,
+    set,
+    tap,
+    test,
+    tryCatch,
+    view,
+    when
+} from "ramda";
 
  const api = new Api();
 
- /**
-  * Я – пример, удали меня
-  */
- const wait = time => new Promise(resolve => {
-     setTimeout(resolve, time);
- })
+const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
- const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
-     /**
-      * Я – пример, удали меня
-      */
-     writeLog(value);
+    const logIt = tap(writeLog)
+    const consoleIt = tap(console.log)
+    const createSafeFunction = (fn) => tryCatch(fn, handleError);
+    const createSafeAPI = (url) => createSafeFunction(api.get(url))
+    const getNumberFromAPI = createSafeAPI('https://api.tech/numbers/base')
+    const getAnimalFromAPI = (url) => createSafeAPI(url)({})
 
-     api.get('https://api.tech/numbers/base', {from: 2, to: 10, number: '01011010101'}).then(({result}) => {
-         writeLog(result);
-     });
+    const buildAnimalGet = (id) => `https://animals.tech/${id}`
 
-     wait(2500).then(() => {
-         writeLog('SecondLog')
+     const validation = compose(
+         allPass([
+             compose(
+                 allPass([
+                     len => len < 10,
+                     len => len > 2
+                 ]),
+                 length,
+             ),
+             compose(
+                 test(/^\d*$/)
+             )
+         ])
+     )
 
-         return wait(1500);
-     }).then(() => {
-         writeLog('ThirdLog');
+     //     consoleIt(),
+     //     tap(handleError('ValidationError'))
+     // )
 
-         return wait(400);
-     }).then(() => {
-         handleSuccess('Done');
-     });
- }
+    const parseToDigit = compose(logIt, pipe(Number, Math.round))
+
+    const createPropForAPI = (number) => {
+        return set(lensProp('number'), number, {from: 10, to: 2, number: 1})
+    }
+
+    const logLen = compose(logIt, length, pipe(String))
+    const square = compose(logIt, x => x ** 2)
+    const mod3 = compose(logIt, x => x % 3)
+
+    const getAnimal = compose(
+        andThen(compose(
+            handleSuccess,
+            prop('result'),
+        )),
+        getAnimalFromAPI,
+        buildAnimalGet,
+    )
+
+
+    const part3 = compose(
+        getAnimal,
+        mod3,
+        square,
+        logLen,
+    )
+
+    const convert = compose(
+        andThen(compose(
+            part3, // переделать
+            prop('result'),
+        )),
+        getNumberFromAPI,
+        createPropForAPI
+    )
+
+     const does = compose(
+         ifElse(
+             validation,
+             compose(
+                 convert,
+                 parseToDigit,
+             ),
+             compose(
+                 consoleIt,
+                 handleError,
+                 prop('ValidationError'), // переделать
+             )
+         ),
+         logIt
+     )
+
+    return does(value)
+}
 
  export default processSequence;
