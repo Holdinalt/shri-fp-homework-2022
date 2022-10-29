@@ -21,7 +21,7 @@ import {
     compose, gte,
     ifElse,
     length,
-    lensProp, lt,
+    lensProp, lt, mathMod,
     pipe,
     prop,
     set,
@@ -66,9 +66,12 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
     const createPropForAPI = number => set(lensProp('number'), number, {from: 10, to: 2, number: 1})
 
+    const modDigit3 = number => mathMod(number)(3)
+
     const logLen = compose(logIt, length, pipe(String))
     const square = compose(logIt, x => x ** 2)
-    const mod3 = compose(logIt, x => x % 3)
+    const mod3 = compose(logIt, modDigit3)
+    const Error = () => 'ValidationError'
 
     const getAnimal = compose(
         andThen(compose(
@@ -82,11 +85,13 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
     const mathIt = compose(
         mod3,
+        consoleIt,
         square,
         logLen,
     )
 
     const convert = compose(
+
         andThen(compose(
             getAnimal,
             mathIt,
@@ -104,9 +109,8 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
                  parseToDigit,
              ),
              compose(
-                 consoleIt,
                  handleError,
-                 prop('ValidationError'), // переделать
+                 Error,
              )
          ),
          logIt
