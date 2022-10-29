@@ -5,7 +5,7 @@ import {
     compose,
     equals,
     prop,
-    countBy, values, toLower, propEq, not
+    countBy, values, toLower, propEq, not, lte, converge
 } from 'ramda';
 
 /**
@@ -39,16 +39,24 @@ export const validateFieldN1 = ({star, square, triangle, circle}) => {
 
 // 2. Как минимум две фигуры зеленые.
 export const validateFieldN2 = compose(
-    x => x >= 2,
+    lte(2),
     prop(true),
     countBy(equals('green')),
     values
 )
 
 // 3. Количество красных фигур равно кол-ву синих.
+
 export const validateFieldN3 = compose(
-    data => data.blue === data.red,
-    countColors
+
+    converge(
+        equals,
+        [
+            prop('red'),
+            prop('blue')
+        ]
+    ),
+    countColors,
 )
 
 
@@ -63,9 +71,7 @@ export const validateFieldN4 = allPass([
 // 5. Три фигуры одного любого цвета кроме белого (четыре фигуры одного цвета – это тоже true).
 export const validateFieldN5 = (obj) => {
 
-    const termFunc = (x) => {
-        return x >= 3
-    }
+    const termFunc = lte(3)
 
     const terms = compose(
         anyPass([
@@ -145,8 +151,17 @@ export const validateFieldN9 = compose(
 
 // 10. Треугольник и квадрат одного цвета (не белого), остальные – любого цвета
 export const validateFieldN10 = allPass([
-    obj => obj.square === obj.triangle,
     compose(
+        converge(
+            equals,
+            [
+                prop('square'),
+                prop('triangle')
+            ]
+        )
+    ),
+    compose(
+        not,
         equals('white'),
         prop('square'),
     )

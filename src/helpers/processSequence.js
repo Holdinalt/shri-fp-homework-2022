@@ -18,19 +18,16 @@
 import {
     allPass,
     andThen,
-    compose,
+    compose, gte,
     ifElse,
     length,
-    lensProp,
-    not, otherwise,
+    lensProp, lt,
     pipe,
     prop,
     set,
     tap,
     test,
     tryCatch,
-    view,
-    when
 } from "ramda";
 
  const api = new Api();
@@ -50,8 +47,8 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
          allPass([
              compose(
                  allPass([
-                     len => len < 10,
-                     len => len > 2
+                     gte(10),
+                     lt(2)
                  ]),
                  length,
              ),
@@ -67,9 +64,7 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
     const parseToDigit = compose(logIt, pipe(Number, Math.round))
 
-    const createPropForAPI = (number) => {
-        return set(lensProp('number'), number, {from: 10, to: 2, number: 1})
-    }
+    const createPropForAPI = number => set(lensProp('number'), number, {from: 10, to: 2, number: 1})
 
     const logLen = compose(logIt, length, pipe(String))
     const square = compose(logIt, x => x ** 2)
@@ -85,8 +80,7 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
     )
 
 
-    const part3 = compose(
-        getAnimal,
+    const mathIt = compose(
         mod3,
         square,
         logLen,
@@ -94,7 +88,8 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
     const convert = compose(
         andThen(compose(
-            part3, // переделать
+            getAnimal,
+            mathIt,
             prop('result'),
         )),
         getNumberFromAPI,
