@@ -34,48 +34,52 @@ import {
 
 const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
-    const logIt = tap(writeLog)
+    const getWriteLog = () => prop('writeLog')
+    const getHandleSuccess = () => prop('handleSuccess')
+    const getHandleError = () => prop('handleError')
+    const Error = () => 'ValidationError'
+
+
+
+    const logIt = () => tap(getWriteLog)
     const consoleIt = tap(console.log)
-    const createSafeFunction = (fn) => tryCatch(fn, handleError);
+
+    const createSafeFunction = (fn) => tryCatch(fn, getHandleError);
     const createSafeAPI = (url) => createSafeFunction(api.get(url))
-    const getNumberFromAPI = createSafeAPI('https://api.tech/numbers/base')
     const getAnimalFromAPI = (url) => createSafeAPI(url)({})
+    const getNumberFromAPI = createSafeAPI('https://api.tech/numbers/base')
 
-    const buildAnimalGet = (id) => `https://animals.tech/${id}`
-
-     const validation = compose(
-         allPass([
-             compose(
-                 allPass([
-                     gte(10),
-                     lt(2)
-                 ]),
-                 length,
-             ),
-             compose(
-                 test(/^\d*$/)
-             )
-         ])
-     )
-
-     //     consoleIt(),
-     //     tap(handleError('ValidationError'))
-     // )
-
-    const parseToDigit = compose(logIt, pipe(Number, Math.round))
-
+    const buildAnimalGet = id => `https://animals.tech/${id}`
     const createPropForAPI = number => set(lensProp('number'), number, {from: 10, to: 2, number: 1})
+
+
 
     const modDigit3 = number => mathMod(number)(3)
 
+    const parseToDigit = compose(logIt, pipe(Number, Math.round))
     const logLen = compose(logIt, length, pipe(String))
     const square = compose(logIt, x => x ** 2)
     const mod3 = compose(logIt, modDigit3)
-    const Error = () => 'ValidationError'
+    const HandleError = compose(getHandleError, Error)
+
+    const validateLen = compose(
+        allPass([
+            gte(10),
+            lt(2)
+        ]),
+        length,
+    )
+
+    const validation = compose(
+        allPass([
+            validateLen,
+            test(/^\d*$/)
+        ])
+    )
 
     const getAnimal = compose(
         andThen(compose(
-            handleSuccess,
+            getHandleSuccess,
             prop('result'),
         )),
         getAnimalFromAPI,
@@ -108,15 +112,12 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
                  convert,
                  parseToDigit,
              ),
-             compose(
-                 handleError,
-                 Error,
-             )
+             HandleError
          ),
-         logIt
+         logIt,
      )
 
     return does(value)
 }
 
- export default processSequence;
+export default processSequence;
