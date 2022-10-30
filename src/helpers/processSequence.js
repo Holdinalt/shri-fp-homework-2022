@@ -91,8 +91,7 @@ const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
 
     const does = compose(
         ifElse(validation, compose(convert, parseToDigit), handleValidationError),
-        logIt,
-        consoleIt,
+        logIt
     )
 
     return does(value)
